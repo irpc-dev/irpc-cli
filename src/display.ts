@@ -9,7 +9,7 @@ export interface RequestLog {
 
 const SEP = '─'.repeat(60);
 
-export function printBanner(tunnelUrl: string, localUrl: string, tokenPrefix: string, version: string) {
+export function printBanner(tunnelUrl: string, localUrl: string, tokenPrefix: string, version: string, authEnabled = false) {
   console.clear();
   console.log(chalk.bold.white('\nirpc.dev') + chalk.gray('                                    (ctrl+c to quit)'));
   console.log(chalk.gray(SEP));
@@ -17,9 +17,24 @@ export function printBanner(tunnelUrl: string, localUrl: string, tokenPrefix: st
   console.log(chalk.gray('Token:          ') + chalk.white(tokenPrefix + '…'));
   console.log(chalk.gray('Version:        ') + chalk.white(version));
   console.log(chalk.gray('Tunnel URL:     ') + chalk.cyan(tunnelUrl) + chalk.gray(' → ') + chalk.white(localUrl));
+  if (authEnabled) {
+    console.log(chalk.gray('Auth:           ') + chalk.yellow('🔒 protected') + chalk.gray(' — Bearer token required (see below)'));
+  }
   console.log('');
   console.log(chalk.bold.gray('HTTP Requests'));
   console.log(chalk.gray(SEP));
+}
+
+export function printAuthToken(tunnelAuthToken: string) {
+  console.log('');
+  console.log(chalk.yellow('🔒 Tunnel Auth Token') + chalk.gray(' (copy this — it will not be shown again in this terminal)'));
+  console.log(chalk.gray(SEP));
+  console.log(chalk.white('  Token:  ') + chalk.cyan(tunnelAuthToken));
+  console.log('');
+  console.log(chalk.gray('  Callers must send:'));
+  console.log(chalk.gray('    X-IRPC-FORTZA: ') + chalk.cyan(tunnelAuthToken));
+  console.log(chalk.gray(SEP));
+  console.log('');
 }
 
 export function printConnecting(serverUrl: string) {

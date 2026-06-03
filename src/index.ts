@@ -3,7 +3,7 @@
 import { Command } from 'commander';
 import ora from 'ora';
 import { createTunnelClient } from './client.js';
-import { printBanner, printConnecting, printError, printSubdomainTaken } from './display.js';
+import { printBanner, printConnecting, printError, printSubdomainTaken, printAuthToken } from './display.js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -20,6 +20,7 @@ program
   .requiredOption('-p, --port <port>', 'Local port to expose', parseInt)
   .requiredOption('-t, --token <token>', 'Your irpc.dev API token')
   .option('-s, --subdomain <subdomain>', 'Custom subdomain (optional, auto-generated if omitted)')
+  .option('-a, --auth', 'Protect the tunnel — all traffic must supply a Bearer token')
   .option('--server <url>', 'irpc server URL', 'wss://irpc.dev')
   .parse(process.argv);
 
@@ -27,12 +28,14 @@ const opts = program.opts<{
   port: number;
   token: string;
   subdomain?: string;
+  auth?: boolean;
   server: string;
 }>();
 
 const localPort = opts.port;
 const token = opts.token;
 const serverUrl = opts.server;
+const authEnabled = !!opts.auth;
 const requestedSubdomain = opts.subdomain;
 const subdomain = requestedSubdomain || generateSubdomain();
 
@@ -89,9 +92,13 @@ async function main() {
     token,
     subdomain,
     localPort,
+    authEnabled,
     onConnected: () => {
       spinner.stop();
-      printBanner(tunnelUrl, localUrl, tokenPrefix, pkg.version);
+      printBanner(tunnelUrl, localUrl, tokenPrefix, pkg.version, authEnabled);
+    },
+    onAuthToken: (tunnelAuthToken: string) => {
+      printAuthToken(tunnelAuthToken);
     },
   });
 

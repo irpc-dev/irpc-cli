@@ -7,7 +7,9 @@ export interface ClientOptions {
   token: string;
   subdomain: string;
   localPort: number;
+  authEnabled: boolean;
   onConnected: () => void;
+  onAuthToken: (tunnelAuthToken: string) => void;
 }
 
 const MAX_BACKOFF_MS = 30_000;
@@ -19,7 +21,7 @@ export function createTunnelClient(opts: ClientOptions): { close: () => void } {
   let reconnectTimer: NodeJS.Timeout | null = null;
 
   function connect() {
-    const wsUrl = `${opts.serverUrl}/agent-connect?token=${encodeURIComponent(opts.token)}&subdomain=${encodeURIComponent(opts.subdomain)}`;
+    const wsUrl = `${opts.serverUrl}/agent-connect?token=${encodeURIComponent(opts.token)}&subdomain=${encodeURIComponent(opts.subdomain)}${opts.authEnabled ? '&auth=true' : ''}`;
     ws = new WebSocket(wsUrl);
 
     ws.on('open', () => {
@@ -28,11 +30,17 @@ export function createTunnelClient(opts: ClientOptions): { close: () => void } {
     });
 
     ws.on('message', async (data: WebSocket.RawData) => {
-      let payload: ProxyRequest & { correlationId: string };
+      let payload: ProxyRequest & { correlationId: string; type?: string; tunnelAuthToken?: string };
       try {
         payload = JSON.parse(data.toString());
       } catch {
         printError('Received malformed message from server');
+        return;
+      }
+
+      // Control message from server (not an HTTP request to proxy)
+      if (payload.type === 'auth_token') {
+        if (payload.tunnelAuthToken) opts.onAuthToken(payload.tunnelAuthToken);
         return;
       }
 

@@ -7,7 +7,7 @@ irpc.dev                                    (ctrl+c to quit)
 ────────────────────────────────────────────────────────────
 Session Status: online
 Token:          irpc_ueoVDg8…
-Version:        1.0.0
+Version:        1.0.1
 Tunnel URL:     https://myapp.irpc.dev → http://localhost:3000
 
 HTTP Requests
@@ -43,6 +43,7 @@ irpc --port <port> --token <token> [options]
 | `-p, --port <number>` | Local port to expose **(required)** |
 | `-t, --token <string>` | Your irpc.dev API token **(required)** |
 | `-s, --subdomain <string>` | Custom subdomain — e.g. `myapp` → `myapp.irpc.dev` |
+| `-a, --auth` | Protect the tunnel — callers must send `X-IRPC-FORTZA: <token>` |
 | `--server <url>` | Custom server URL (default: `wss://irpc.dev`) |
 | `-V, --version` | Print version |
 | `-h, --help` | Show help |
@@ -55,6 +56,9 @@ npx @irpc.dev/irpc --port 3000 --token irpc_abc123
 
 # Custom subdomain
 npx @irpc.dev/irpc --port 8080 --token irpc_abc123 --subdomain myapi
+
+# Protected tunnel — generates a per-session token, callers must send X-IRPC-FORTZA: <token>
+npx @irpc.dev/irpc --port 3000 --token irpc_abc123 --auth
 
 # Point at a local dev irpc server
 npx @irpc.dev/irpc --port 3000 --token irpc_abc123 --server ws://localhost:5000
