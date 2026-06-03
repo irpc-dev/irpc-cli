@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import ora from 'ora';
 import { createTunnelClient } from './client.js';
 import { printBanner, printConnecting, printError, printSubdomainTaken, printAuthToken } from './display.js';
+import { loadAuthToken, saveAuthToken } from './config.js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -87,18 +88,23 @@ async function main() {
   const spinner = ora({ text: `Connecting to irpc.dev...`, color: 'cyan' }).start();
   printConnecting(serverUrl);
 
+  // Load any previously saved tunnel auth token for this subdomain
+  const existingAuthToken = authEnabled ? loadAuthToken(subdomain) : null;
+
   const client = createTunnelClient({
     serverUrl,
     token,
     subdomain,
     localPort,
     authEnabled,
+    existingAuthToken: existingAuthToken ?? undefined,
     onConnected: () => {
       spinner.stop();
       printBanner(tunnelUrl, localUrl, tokenPrefix, pkg.version, authEnabled);
     },
-    onAuthToken: (tunnelAuthToken: string) => {
-      printAuthToken(tunnelAuthToken);
+    onAuthToken: (tunnelAuthToken: string, isNew: boolean) => {
+      saveAuthToken(subdomain, tunnelAuthToken);
+      printAuthToken(tunnelAuthToken, isNew);
     },
   });
 

@@ -8,8 +8,9 @@ export interface ClientOptions {
   subdomain: string;
   localPort: number;
   authEnabled: boolean;
+  existingAuthToken?: string;
   onConnected: () => void;
-  onAuthToken: (tunnelAuthToken: string) => void;
+  onAuthToken: (tunnelAuthToken: string, isNew: boolean) => void;
 }
 
 const MAX_BACKOFF_MS = 30_000;
@@ -19,14 +20,19 @@ export function createTunnelClient(opts: ClientOptions): { close: () => void } {
   let reconnectAttempt = 0;
   let stopped = false;
   let reconnectTimer: NodeJS.Timeout | null = null;
+  let bannerPrinted = false;
+  let authTokenPrinted = false;
 
   function connect() {
-    const wsUrl = `${opts.serverUrl}/agent-connect?token=${encodeURIComponent(opts.token)}&subdomain=${encodeURIComponent(opts.subdomain)}${opts.authEnabled ? '&auth=true' : ''}`;
+    const wsUrl = `${opts.serverUrl}/agent-connect?token=${encodeURIComponent(opts.token)}&subdomain=${encodeURIComponent(opts.subdomain)}${opts.authEnabled ? '&auth=true' : ''}${opts.existingAuthToken ? `&existingTat=${encodeURIComponent(opts.existingAuthToken)}` : ''}`;
     ws = new WebSocket(wsUrl);
 
     ws.on('open', () => {
       reconnectAttempt = 0;
-      opts.onConnected();
+      if (!bannerPrinted) {
+        bannerPrinted = true;
+        opts.onConnected();
+      }
     });
 
     ws.on('message', async (data: WebSocket.RawData) => {
@@ -40,7 +46,11 @@ export function createTunnelClient(opts: ClientOptions): { close: () => void } {
 
       // Control message from server (not an HTTP request to proxy)
       if (payload.type === 'auth_token') {
-        if (payload.tunnelAuthToken) opts.onAuthToken(payload.tunnelAuthToken);
+        if (payload.tunnelAuthToken && !authTokenPrinted) {
+          authTokenPrinted = true;
+          const isNew = payload.tunnelAuthToken !== opts.existingAuthToken;
+          opts.onAuthToken(payload.tunnelAuthToken, isNew);
+        }
         return;
       }
 

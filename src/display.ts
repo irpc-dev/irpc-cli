@@ -18,22 +18,26 @@ export function printBanner(tunnelUrl: string, localUrl: string, tokenPrefix: st
   console.log(chalk.gray('Version:        ') + chalk.white(version));
   console.log(chalk.gray('Tunnel URL:     ') + chalk.cyan(tunnelUrl) + chalk.gray(' → ') + chalk.white(localUrl));
   if (authEnabled) {
-    console.log(chalk.gray('Auth:           ') + chalk.yellow('🔒 protected') + chalk.gray(' — Bearer token required (see below)'));
+    console.log(chalk.gray('Auth:           ') + chalk.yellow('🔒 protected') + chalk.gray(' — X-IRPC-FORTZA required (see below)'));
   }
   console.log('');
   console.log(chalk.bold.gray('HTTP Requests'));
   console.log(chalk.gray(SEP));
 }
 
-export function printAuthToken(tunnelAuthToken: string) {
+export function printAuthToken(tunnelAuthToken: string, isNew = true) {
   console.log('');
-  console.log(chalk.yellow('🔒 Tunnel Auth Token') + chalk.gray(' (copy this — it will not be shown again in this terminal)'));
-  console.log(chalk.gray(SEP));
-  console.log(chalk.white('  Token:  ') + chalk.cyan(tunnelAuthToken));
-  console.log('');
-  console.log(chalk.gray('  Callers must send:'));
-  console.log(chalk.gray('    X-IRPC-FORTZA: ') + chalk.cyan(tunnelAuthToken));
-  console.log(chalk.gray(SEP));
+  if (isNew) {
+    console.log(chalk.yellow('🔒 Tunnel Auth Token') + chalk.gray(' (new token — copy it now)'));
+    console.log(chalk.gray(SEP));
+    console.log(chalk.white('  Token:  ') + chalk.cyan(tunnelAuthToken));
+    console.log('');
+    console.log(chalk.gray('  Callers must send:'));
+    console.log(chalk.gray('    X-IRPC-FORTZA: ') + chalk.cyan(tunnelAuthToken));
+    console.log(chalk.gray(SEP));
+  } else {
+    console.log(chalk.yellow('🔒 Auth:') + chalk.gray('  X-IRPC-FORTZA: ') + chalk.cyan(tunnelAuthToken));
+  }
   console.log('');
 }
 
