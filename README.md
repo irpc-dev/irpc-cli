@@ -21,13 +21,13 @@ POST   /api/auth/login                      401     8ms
 No install required — use `npx`:
 
 ```bash
-npx irpc --port 3000 --token <your-token>
+npx @irpc.dev/irpc --port 3000 --token <your-token>
 ```
 
 Or install globally:
 
 ```bash
-npm install -g irpc
+npm install -g @irpc.dev/irpc
 ```
 
 ## Usage
@@ -51,13 +51,13 @@ irpc --port <port> --token <token> [options]
 
 ```bash
 # Basic tunnel to port 3000
-npx irpc --port 3000 --token irpc_abc123
+npx @irpc.dev/irpc --port 3000 --token irpc_abc123
 
 # Custom subdomain
-npx irpc --port 8080 --token irpc_abc123 --subdomain myapi
+npx @irpc.dev/irpc --port 8080 --token irpc_abc123 --subdomain myapi
 
 # Point at a local dev irpc server
-npx irpc --port 3000 --token irpc_abc123 --server ws://localhost:5000
+npx @irpc.dev/irpc --port 3000 --token irpc_abc123 --server ws://localhost:5000
 ```
 
 ## Subdomain availability
@@ -72,7 +72,7 @@ If you request a subdomain that's already in use, the CLI exits immediately and 
   → quick-myapp
   → myapp-relay
 
-  Try: npx irpc --port 3000 --token <token> --subdomain myapp2
+  Try: npx @irpc.dev/irpc --port 3000 --token <token> --subdomain myapp2
 ```
 
 ## How it works

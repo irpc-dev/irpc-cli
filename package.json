@@ -1,5 +1,5 @@
 {
-  "name": "irpc",
+  "name": "@irpc.dev/irpc",
   "version": "1.0.0",
   "description": "irpc.dev — Expose your local server to the internet instantly",
   "main": "dist/index.js",
@@ -7,11 +7,16 @@
     "irpc": "dist/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "npx tsc",
     "dev": "ts-node src/index.ts",
     "start": "node dist/index.js",
     "prepublishOnly": "npm run build"
   },
+  "files": [
+    "dist/",
+    "LICENSE",
+    "README.md"
+  ],
   "keywords": [
     "tunnel",
     "ngrok",
