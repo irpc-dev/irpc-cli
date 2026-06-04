@@ -24,7 +24,7 @@ export function createTunnelClient(opts: ClientOptions): { close: () => void } {
   let authTokenPrinted = false;
 
   function connect() {
-    const wsUrl = `${opts.serverUrl}/agent-connect?token=${encodeURIComponent(opts.token)}&subdomain=${encodeURIComponent(opts.subdomain)}${opts.authEnabled ? '&auth=true' : ''}${opts.existingAuthToken ? `&existingTat=${encodeURIComponent(opts.existingAuthToken)}` : ''}`;
+    const wsUrl = `${opts.serverUrl}/agent-connect?token=${encodeURIComponent(opts.token)}&subdomain=${encodeURIComponent(opts.subdomain)}&port=${opts.localPort}${opts.authEnabled ? '&auth=true' : ''}${opts.existingAuthToken ? `&existingTat=${encodeURIComponent(opts.existingAuthToken)}` : ''}`;
     ws = new WebSocket(wsUrl);
 
     ws.on('open', () => {
