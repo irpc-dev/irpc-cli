@@ -1,6 +1,6 @@
 {
   "name": "@irpc.dev/irpc",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "irpc.dev — Expose your local server to the internet instantly",
   "main": "dist/index.js",
   "bin": {

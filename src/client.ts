@@ -1,5 +1,5 @@
 import WebSocket from 'ws';
-import { proxyToLocal, ProxyRequest } from './proxy.js';
+import { proxyToLocalStreaming, ProxyRequest } from './proxy.js';
 import { logRequest, printDisconnected, printError } from './display.js';
 
 export interface ClientOptions {
@@ -55,24 +55,43 @@ export function createTunnelClient(opts: ClientOptions): { close: () => void } {
       }
 
       const start = Date.now();
-      const response = await proxyToLocal(opts.localPort, payload);
-      const durationMs = Date.now() - start;
+      let responseStatus = 200;
+      const currentWs = ws;
 
-      logRequest({
-        method: payload.method,
-        path: payload.path,
-        status: response.status,
-        durationMs,
-      });
-
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({
-          correlationId: payload.correlationId,
-          status: response.status,
-          headers: response.headers,
-          body: response.body,
-        }));
-      }
+      await proxyToLocalStreaming(
+        opts.localPort,
+        payload,
+        (status, headers) => {
+          responseStatus = status;
+          if (currentWs && currentWs.readyState === WebSocket.OPEN) {
+            currentWs.send(JSON.stringify({
+              type: 'stream_start',
+              correlationId: payload.correlationId,
+              status,
+              headers,
+            }));
+          }
+        },
+        (chunk) => {
+          if (currentWs && currentWs.readyState === WebSocket.OPEN) {
+            currentWs.send(JSON.stringify({
+              type: 'stream_chunk',
+              correlationId: payload.correlationId,
+              chunk: chunk.toString('base64'),
+            }));
+          }
+        },
+        () => {
+          const durationMs = Date.now() - start;
+          logRequest({ method: payload.method, path: payload.path, status: responseStatus, durationMs });
+          if (currentWs && currentWs.readyState === WebSocket.OPEN) {
+            currentWs.send(JSON.stringify({
+              type: 'stream_end',
+              correlationId: payload.correlationId,
+            }));
+          }
+        },
+      );
     });
 
     ws.on('close', (code, reason) => {

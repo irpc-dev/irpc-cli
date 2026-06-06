@@ -1,4 +1,4 @@
-import { fetch } from 'undici';
+import { request } from 'undici';
 
 export interface ProxyRequest {
   method: string;
@@ -8,42 +8,48 @@ export interface ProxyRequest {
   body: string;
 }
 
-export interface ProxyResponse {
-  status: number;
-  headers: Record<string, string>;
-  body: string;
-}
-
-export async function proxyToLocal(localPort: number, req: ProxyRequest): Promise<ProxyResponse> {
+export async function proxyToLocalStreaming(
+  localPort: number,
+  req: ProxyRequest,
+  onStart: (status: number, headers: Record<string, string>) => void,
+  onChunk: (chunk: Buffer) => void,
+  onEnd: () => void,
+): Promise<void> {
   const url = `http://localhost:${localPort}${req.path}${req.query ? '?' + req.query : ''}`;
 
-  const fetchHeaders: Record<string, string> = { ...req.headers };
-  delete fetchHeaders['host'];
-  delete fetchHeaders['connection'];
+  const upstreamHeaders: Record<string, string> = { ...req.headers };
+  delete upstreamHeaders['host'];
+  delete upstreamHeaders['connection'];
+  delete upstreamHeaders['transfer-encoding'];
 
-  const hasBody = req.body && req.body.length > 0 &&
+  const hasBody = !!req.body && req.body.length > 0 &&
     !['GET', 'HEAD', 'DELETE', 'OPTIONS'].includes(req.method.toUpperCase());
 
   try {
-    const response = await fetch(url, {
-      method: req.method,
-      headers: fetchHeaders,
+    const { statusCode, headers, body } = await request(url, {
+      method: req.method as any,
+      headers: upstreamHeaders,
       body: hasBody ? req.body : undefined,
     });
 
-    const body = await response.text();
-    const headers: Record<string, string> = {};
-    response.headers.forEach((value, key) => {
-      headers[key] = value;
-    });
+    const respHeaders: Record<string, string> = {};
+    for (const [key, value] of Object.entries(headers)) {
+      if (value !== undefined) {
+        respHeaders[key] = Array.isArray(value) ? value.join(', ') : value;
+      }
+    }
 
-    return { status: response.status, headers, body };
+    onStart(statusCode, respHeaders);
+
+    for await (const chunk of body) {
+      onChunk(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as any));
+    }
+
+    onEnd();
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';
-    return {
-      status: 502,
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ error: 'Local server unreachable', detail: message }),
-    };
+    onStart(502, { 'content-type': 'application/json' });
+    onChunk(Buffer.from(JSON.stringify({ error: 'Local server unreachable', detail: message })));
+    onEnd();
   }
 }
